@@ -78,6 +78,8 @@ def atob(string, buffer):
     return result
 
 def checkBase64(string):
+    string = string.split(';base64,')[1] #Now we enforce base64 in DataURL format
+    if not string: return False
     try:
        return btoa(atob(string)) == string
     except:
@@ -589,7 +591,7 @@ def query(db, type, args, limit):
     )
 
 v"""
-if (typeof window !== 'undefined' && typeof window.HTMLBodyElement !== 'undefined') {configuration.client = true}
+if (typeof window !== 'undefined' && typeof window.XMLHttpRequest !== 'undefined') {configuration.client = true}
 else {configuration.client = false}
 """
 

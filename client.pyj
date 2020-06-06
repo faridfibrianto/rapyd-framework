@@ -44,11 +44,9 @@ for key in tools.menu:
 def init_client():
     try:
         console.log('Initialize Client')
-        for key in react.new_components:
-            tools.client.components[key] = react.new_components[key]
-        if tools.configuration.long_name or tools.configuration.app_name: document.querySelector('title').innerHTML = tools.configuration.long_name or tools.configuration.app_name
-        #await []
         window.renderApp(App)
+        if tools.client.Native.Platform.OS != 'web': return console.log('Im out')
+        if tools.configuration.long_name or tools.configuration.app_name: document.querySelector('title').innerHTML = tools.configuration.long_name or tools.configuration.app_name
         if tools.configuration.custom_navbar:
            style = document.createElement('style')
            style.innerHTML = '.navbar, .toolbar, .statusbar {background-color: ' + tools.configuration.custom_navbar + '!important}'
@@ -68,7 +66,33 @@ def init_client():
     except Exception as error:
         raise error
 
-tools.init_client = init_client
+@async
+def check_session():
+    session = None
+    try:
+        session = await [window.session_db.get('session')]
+    except Exception as error:
+        console.log(error)
+        await [window.session_db.changes({'since': 0, 'limit': 1})]
+        session = await [window.session_db.get('session')]
+    models.env.user = models.env['res.users'].browse()
+    models.env.user.id = session.id
+    models.env.user.login = session.login
+    models.env.user.password = session.password
+    url = ''
+    if tools.client.Native.Platform.OS == 'web':
+       href = window.location.origin + window.location.pathname
+       url = href.substring(0, href.lastIndexOf('/')) + '/'
+    storage_url = await [tools.client.Native.AsyncStorage.getItem('rapyd_server_url')]
+    console.log(storage_url)
+    if storage_url: url = storage_url
+    tools.configuration.url = url
+    return init_client()
+
+def start_client():
+    check_session().catch(console.error)
+
+tools.init_client = start_client
 
 try:
     export_object.models = models
